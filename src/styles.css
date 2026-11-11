@@ -283,6 +283,9 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 .live-ribbon .automation__head p, .live-ribbon .contact__lead { padding-left: calc(18 * var(--u)); }
 /* ---------- HERO BUBBLES ---------- */
 .hero__bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+/* The copy block is an invisible box over the left of the hero; only its words and buttons take clicks, so bubbles under it can still be popped. */
+.hero__copy { pointer-events: none; }
+.hero__copy :is(a, button) { pointer-events: auto; }
 .bubble { position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: auto; cursor: pointer; will-change: transform, opacity; -webkit-tap-highlight-color: transparent; }
 .bubble:focus-visible { outline: none; }
 .bubble__skin { position: absolute; inset: 0; border-radius: 50%; background-repeat: no-repeat;
@@ -304,7 +307,9 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 :is(.services, .process, .about) { --blend: calc(150 * var(--u)); }
 :is(.services, .process)::before { top: 0; background: linear-gradient(to bottom, var(--midnight) 0%, rgba(40, 28, 96, .78) 38%, rgba(118, 80, 188, .28) 72%, rgba(118, 80, 188, 0) 100%); }
 :is(.services, .about)::after { bottom: 0; background: linear-gradient(to top, var(--midnight) 0%, rgba(40, 28, 96, .78) 38%, rgba(118, 80, 188, .28) 72%, rgba(118, 80, 188, 0) 100%); }
-.process::after { bottom: 0; background: linear-gradient(to top, #B4B0F7 0%, rgba(180, 176, 247, 0) 100%); }
+.process::after { bottom: 0; background: linear-gradient(to top, #b9b6f6 0%, rgba(185, 182, 246, 0) 100%); }
+/* The About sky fades in from that same lilac, so there is no line where Process ends. */
+.about__art { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--blend) * 1.6)); mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--blend) * 1.6)); }
 /* Room for the blends, so they never sit on top of words. */
 .services__inner { padding-top: calc(76 * var(--u) + var(--blend)); padding-bottom: calc(112 * var(--u) + var(--blend)); }
 .process__inner { padding-top: calc(190 * var(--u) + var(--blend) * .6); }
@@ -344,7 +349,7 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 
   .hero { min-height: 100svh; display: flex; align-items: flex-start; }
   .hero__art { background-position: 64% center; }
-  .hero__art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(214, 208, 255, .78) 0%, rgba(214, 208, 255, .55) 38%, rgba(214, 208, 255, 0) 62%); }
+  .hero__art::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(214, 208, 255, .78) 0%, rgba(214, 208, 255, .55) 38%, rgba(214, 208, 255, 0) 62%); }
   .hero__copy { padding: 104px 22px 48px; max-width: 620px; }
   .hero h1 { font-size: clamp(40px, 11.500vw, 68px); }
   .hero h1 .accent { white-space: normal; }

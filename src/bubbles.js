@@ -49,7 +49,10 @@ export function initBubbles(layer, flow, src, { boost = () => 0 } = {}) {
     b.el.classList.add('is-popping');
   }
   function respawn(b) {
-    do { b.x = 60 + Math.random() * (IMG_W - 120); } while (b.x > KID.x0 && b.x < KID.x1);
+    // Born somewhere in the part of the picture this screen actually shows.
+    const x0 = Math.max(60, fit.ox + b.r), x1 = Math.min(IMG_W - 60, fit.ox + layer.clientWidth / fit.s - b.r);
+    let tries = 0;
+    do { b.x = x0 + Math.random() * Math.max(1, x1 - x0); } while (b.x > KID.x0 && b.x < KID.x1 && ++tries < 20);
     b.y = 770 + Math.random() * 40;      // just behind the mountain line
     b.age = 0;
     b.popping = 0;
