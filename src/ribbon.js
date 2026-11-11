@@ -26,8 +26,9 @@ const vec3 HOT    = vec3(0.880, 0.360, 1.000); // magenta seen in the approved a
 // Where the ribbon's centre sits (0..1 across the screen) at a given height of the page.
 // It enters top-right and sweeps down to the left, like the approved hero, then keeps weaving.
 float centre(float wy, float aspect) {
-  float sway = mix(0.10, 0.13, smoothstep(0.6, 1.5, aspect));
-  return mix(0.62, 0.77, smoothstep(0.6, 1.5, aspect))
+  float sway = mix(0.035, 0.13, smoothstep(0.6, 1.5, aspect));
+  // On a phone there is no empty side, so it hugs the right edge, half off-screen.
+  return mix(1.03, 0.77, smoothstep(0.6, 1.5, aspect))
     + sway * sin(wy * 1.6 + 2.2)
     + 0.05 * sin(wy * 3.1 + 1.7 + uTime * 0.16)
     + 0.015 * sin(wy * 7.0 - uTime * 0.3);
@@ -95,7 +96,7 @@ void main() {
   float px = 1.0 / uRes.x;
 
   float c = centre(wy, aspect);
-  float hw = (0.105 + 0.035 * sin(wy * 1.3 + 1.0)) * mix(1.8, 1.0, smoothstep(0.55, 1.4, aspect));
+  float hw = (0.105 + 0.035 * sin(wy * 1.3 + 1.0)) * mix(0.8, 1.0, smoothstep(0.55, 1.4, aspect));
 
   // Four sheets weaving around the centre line, back to front.
   float w1 = sin(wy * 2.1 + uPhase * 0.22);

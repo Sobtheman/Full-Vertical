@@ -224,7 +224,7 @@ if (ribbon) {
     const mask = top > -150 ? `linear-gradient(to bottom, transparent ${top - 30}px, #000 ${top + 150}px)` : 'none';
     ribbonCanvas.style.maskImage = mask;
     ribbonCanvas.style.webkitMaskImage = mask;
-    ribbonCanvas.style.opacity = narrow.matches ? '0.5' : '1';
+    ribbonCanvas.style.opacity = narrow.matches ? '0.9' : '1';
   };
   fade();
   window.addEventListener('scroll', fade, { passive: true });
