@@ -24,46 +24,62 @@ const vec3 PINK   = vec3(0.941, 0.725, 0.847); // #F0B9D8
 const vec3 HOT    = vec3(0.880, 0.360, 1.000); // magenta seen in the approved art
 
 // Where the ribbon's centre sits (0..1 across the screen) at a given height of the page.
+// It enters top-right and sweeps down to the left, like the approved hero, then keeps weaving.
 float centre(float wy, float aspect) {
-  float sway = mix(0.16, 0.25, smoothstep(0.6, 1.5, aspect));
+  float sway = mix(0.15, 0.24, smoothstep(0.6, 1.5, aspect));
   return 0.60
-    + sway * sin(wy * 1.05 + 0.4)
-    + 0.06 * sin(wy * 2.6 + 1.7 + uTime * 0.18)
-    + 0.02 * sin(wy * 6.0 - uTime * 0.35);
+    + sway * sin(wy * 1.6 + 2.2)
+    + 0.05 * sin(wy * 3.1 + 1.7 + uTime * 0.16)
+    + 0.015 * sin(wy * 7.0 - uTime * 0.3);
 }
 
-// One strand of the ribbon. Returns premultiplied colour + alpha.
-vec4 strand(float x, float wy, float c, float hw, float seed, float px) {
-  float u = (x - c) / hw;              // -1..1 across the strand
+// One sheet of the ribbon. It twists as it rises: where it turns edge-on it
+// pinches thin, and it shows a bright face on one side and a dark face on the other.
+vec4 sheet(float x, float wy, float c, float hw, float seed, float px) {
+  float tw = wy * 1.9 + seed * 1.7 + uPhase * 0.12;
+  float face = cos(tw);
+  float w = hw * (0.16 + 0.84 * abs(face));
+  float u = (x - c) / w;               // -1..1 across the sheet
   float au = abs(u);
   if (au > 1.0) return vec4(0.0);
 
   float v = wy * 1.15 + uPhase;        // adding phase makes the surface travel upward
-  float bulge = sqrt(1.0 - u * u);     // rounded like a tube
+  float bulge = sqrt(1.0 - u * u);
 
-  // Flow lines: long streaks that bend and fold as they rise.
-  float s = u * 1.9
-    + 0.95 * sin(v * 1.7 + u * 1.3 + seed)
-    + 0.45 * sin(v * 3.9 - u * 2.1 + seed * 2.3)
-    + 0.18 * sin(v * 8.5 + u * 5.0 + seed * 4.1);
-  float a = s + 0.5 * bulge;
+  // Liquid flow lines, warped twice so they swirl instead of running straight.
+  float q = sin(v * 2.3 + u * 1.7 + seed) + 0.5 * sin(v * 5.1 - u * 3.0 + seed * 1.9);
+  float s = u * 2.1
+    + 1.05 * sin(v * 1.6 + u * 1.2 + seed + 0.6 * q)
+    + 0.40 * sin(v * 4.2 - u * 2.4 + seed * 2.3 - 0.8 * q)
+    + 0.14 * sin(v * 9.5 + u * 6.0 + seed * 4.1);
+  float a = s + 0.6 * bulge;
+  float shade = 0.5 + 0.5 * sin(a * 2.0 + seed);
 
-  vec3 col = mix(NAVY, DEEP, 0.5 + 0.5 * sin(a * 2.0 + seed));
-  col = mix(col, ELEC, smoothstep(0.15, 0.95, sin(a * 3.1 + 1.0)));
-  col = mix(col, HOT, 0.85 * smoothstep(0.45, 1.0, sin(a * 2.3 + 3.2 + seed)));
-  col = mix(col, NAVY * 0.55, 0.8 * smoothstep(0.55, 1.0, sin(a * 1.3 - 1.1)));
+  // Bright face: purple into hot magenta and pink.
+  vec3 lit = mix(DEEP, PURPLE, shade);
+  lit = mix(lit, HOT, 0.85 * smoothstep(0.35, 1.0, sin(a * 2.3 + 3.2 + seed)));
+  lit = mix(lit, PINK, 0.6 * smoothstep(0.7, 1.0, sin(a * 3.7 + 0.4)));
+  // Dark face: deep navy with electric blue running through it.
+  vec3 shadow = mix(NAVY * 0.45, NAVY * 1.5 + ELEC * 0.2, shade);
+  shadow = mix(shadow, ELEC, 0.75 * smoothstep(0.55, 1.0, sin(a * 3.1 + 1.0)));
+
+  vec3 col = mix(shadow, lit, smoothstep(-0.3, 0.3, face));
+  // Deep pockets where the metal folds away from the light.
+  col = mix(col, NAVY * 0.3, 0.8 * smoothstep(0.45, 1.0, sin(a * 1.3 - 1.1 + seed)));
 
   // Chrome highlights: thin, bright, sliding along the flow.
-  float hl = pow(0.5 + 0.5 * sin(a * 5.2 + 2.0), 14.0);
-  float hl2 = pow(0.5 + 0.5 * sin(a * 8.7 - 0.6 + seed), 26.0);
-  col += mix(SKY, vec3(1.0), 0.7) * hl * 0.95;
-  col += mix(PINK, vec3(1.0), 0.5) * hl2 * 0.8;
+  float hl = pow(0.5 + 0.5 * sin(a * 5.2 + 2.0), 22.0);
+  float hl2 = pow(0.5 + 0.5 * sin(a * 8.7 - 0.6 + seed), 34.0);
+  col += mix(SKY, vec3(1.0), 0.75) * hl * 1.1;
+  col += mix(PINK, vec3(1.0), 0.5) * hl2 * 0.9;
+  // A flash of light where the sheet turns edge-on.
+  col += vec3(1.0, 0.96, 1.0) * (1.0 - smoothstep(0.0, 0.3, abs(face))) * bulge * 0.55;
 
   // Glassy rim light on both edges.
-  float rim = pow(au, 5.0);
-  col = mix(col, mix(LILAC, vec3(1.0), 0.45), rim * 0.85);
+  float rim = pow(au, 6.0);
+  col = mix(col, mix(LILAC, vec3(1.0), 0.55), rim * 0.9);
 
-  float alpha = smoothstep(1.0, 1.0 - px / hw * 1.5, au);
+  float alpha = smoothstep(1.0, 1.0 - px / w * 1.5, au);
   return vec4(col * alpha, alpha);
 }
 
@@ -78,23 +94,25 @@ void main() {
   float px = 1.0 / uRes.x;
 
   float c = centre(wy, aspect);
-  float hw = (0.105 + 0.04 * sin(wy * 1.7 + 1.0)) * mix(1.9, 1.0, smoothstep(0.55, 1.4, aspect));
+  float hw = (0.135 + 0.045 * sin(wy * 1.3 + 1.0)) * mix(1.8, 1.0, smoothstep(0.55, 1.4, aspect));
 
-  // Three strands that weave around the centre line, back to front.
-  float w1 = sin(wy * 2.1 + uPhase * 0.25);
-  float w2 = sin(wy * 1.6 + 2.2 - uPhase * 0.18);
-  vec4 back  = strand(x, wy, c + hw * 0.55 * w2, hw * 0.78, 4.2, px);
-  vec4 mid   = strand(x, wy, c - hw * 0.35 * w1, hw * 1.00, 1.3, px);
-  vec4 front = strand(x, wy, c + hw * 0.62 * w1, hw * 0.52, 2.9, px);
-  back.rgb *= 0.78;
+  // Four sheets weaving around the centre line, back to front.
+  float w1 = sin(wy * 2.1 + uPhase * 0.22);
+  float w2 = sin(wy * 1.6 + 2.2 - uPhase * 0.16);
+  float w3 = sin(wy * 2.7 + 4.0 + uPhase * 0.1);
+  vec4 s0 = sheet(x, wy, c + hw * 0.70 * w2, hw * 0.95, 4.2, px);
+  vec4 s1 = sheet(x, wy, c - hw * 0.45 * w1, hw * 1.15, 1.3, px);
+  vec4 s2 = sheet(x, wy, c + hw * 0.55 * w3, hw * 0.80, 5.6, px);
+  vec4 s3 = sheet(x, wy, c + hw * 0.75 * w1, hw * 0.50, 2.9, px);
+  s0.rgb *= 0.72;
+  s1.rgb *= 0.9;
 
-  vec4 col = over(front, over(mid, back));
+  vec4 col = over(s3, over(s2, over(s1, s0)));
 
   // Soft glow around the whole ribbon.
-  float d = max(abs(x - c) - hw * 1.25, 0.0);
-  float glow = exp(-d * 26.0) * 0.20 * (1.0 - col.a);
+  float d = max(abs(x - c) - hw * 1.3, 0.0);
+  float glow = exp(-d * 24.0) * 0.18 * (1.0 - col.a);
   col += vec4(mix(PURPLE, HOT, 0.35) * glow, glow);
-
   gl_FragColor = col;
 }
 `;
