@@ -258,6 +258,24 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 .footer__social a:hover { background: var(--white); color: var(--ink); transform: translateY(-3px); }
 .footer__legal { color: #9C98BE; white-space: nowrap; }
 
+/* ---------- LIVE RIBBON ----------
+   One see-through canvas fixed behind the content of every section.
+   When it is running, the still ribbon crops are hidden (they stay as the fallback). */
+.ribbon { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; opacity: 0; }
+.live-ribbon section > *, .live-ribbon .footer { position: relative; z-index: 2; }
+.live-ribbon .hero__art, .live-ribbon .about__art, .live-ribbon .services__art { position: absolute; z-index: 0; }
+.live-ribbon :is(.work, .automation, .process, .contact) > img[class*='ribbon'] { display: none; }
+.live-ribbon .service { background: rgba(255, 255, 255, .9); }
+.live-ribbon .stage { background: rgba(12, 12, 34, .82); backdrop-filter: blur(6px); }
+.live-ribbon .stage.is-active { background: rgba(40, 24, 80, .85); }
+.live-ribbon .project { background: rgba(12, 12, 34, .9); }
+.live-ribbon .form :is(input, select, textarea) { background: rgba(23, 26, 61, .88); }
+
+/* Text that the ribbon can pass behind gets a soft panel so it always reads. */
+.live-ribbon :is(.services__side, .automation__head p, .flow__detail, .contact__lead, .contact__tag) { border-radius: calc(18 * var(--u)); padding-block: calc(14 * var(--u)); padding-right: calc(18 * var(--u)); backdrop-filter: blur(14px); }
+.live-ribbon .services__side { background: rgba(244, 239, 252, .78); border-radius: 0 calc(18 * var(--u)) calc(18 * var(--u)) 0; }
+.live-ribbon :is(.automation__head p, .flow__detail, .contact__lead, .contact__tag) { background: rgba(7, 8, 26, .72); }
+.live-ribbon .automation__head p, .live-ribbon .contact__lead { padding-left: calc(18 * var(--u)); }
 /* ---------- Scroll reveal ---------- */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
 .reveal.is-in { opacity: 1; transform: none; }

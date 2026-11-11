@@ -1,4 +1,5 @@
 import { config } from './config.js';
+import { initRibbon } from './ribbon.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -188,4 +189,24 @@ if (!reduce) {
     t.style.transitionDelay = `${Math.min(sibs, 5) * 70}ms`;
     io.observe(t);
   });
+}
+
+/* ---------- Live ribbon ---------- */
+// Runs behind every section below the hero and flows upward. The hero keeps its painted ribbon.
+const ribbonCanvas = $('#ribbon');
+const ribbon = initRibbon(ribbonCanvas);
+if (ribbon) {
+  window.__ribbon = ribbon;
+  document.documentElement.classList.add('live-ribbon');
+  const hero = $('#top');
+  const narrow = window.matchMedia('(max-width: 1000px)');
+  const fade = () => {
+    // The ribbon rises from behind the hero's bottom edge instead of crossing the painted scene.
+    const top = Math.max(0, hero.offsetTop + hero.offsetHeight - window.scrollY);
+    ribbonCanvas.style.clipPath = `inset(${top}px 0 0 0)`;
+    ribbonCanvas.style.opacity = narrow.matches ? '0.5' : '1';
+  };
+  fade();
+  window.addEventListener('scroll', fade, { passive: true });
+  window.addEventListener('resize', fade);
 }
