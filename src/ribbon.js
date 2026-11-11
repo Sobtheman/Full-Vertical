@@ -148,8 +148,10 @@ export function initRibbon(canvas, { speed = 0.16, scrollBoost = 0.0016 } = {}) 
   const reduce = forced ? { matches: false } : window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let dpr = 1;
+  let quality = 1;       // drops in steps if the device can't keep a smooth frame rate
+  let slow = 0;
   const resize = () => {
-    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5) * quality;
     canvas.width = Math.round(canvas.clientWidth * dpr);
     canvas.height = Math.round(canvas.clientHeight * dpr);
     gl.viewport(0, 0, canvas.width, canvas.height);
@@ -158,19 +160,32 @@ export function initRibbon(canvas, { speed = 0.16, scrollBoost = 0.0016 } = {}) 
   resize();
 
   let phase = 0;
+  let push = 0;          // scroll push still waiting to be fed into the flow
   let last = performance.now();
   let lastScroll = window.scrollY;
   let raf = 0;
-  const state = { speed, scrollBoost };
+  const state = { speed, scrollBoost, hidden: false };
 
   const draw = (now) => {
-    const dt = Math.min((now - last) / 1000, 0.05);
+    const raw = now - last;
+    const dt = Math.min(raw / 1000, 0.05);
     last = now;
+    // Smoothness beats sharpness: after a run of slow frames, draw the ribbon with fewer pixels.
+    if (!state.hidden && quality > 0.45 && raw < 250) {
+      slow = raw > 24 ? slow + 1 : Math.max(0, slow - 0.25);
+      if (slow > 20) { quality *= 0.7; slow = 0; resize(); }
+    }
     const sy = window.scrollY;
     // Scrolling down pushes the flow faster; it never runs backwards.
     const moved = Math.max(0, sy - lastScroll);
     lastScroll = sy;
-    if (!reduce.matches) phase += dt * state.speed + moved * state.scrollBoost;
+    // The push is fed in gradually, so a mouse-wheel click eases the flow instead of jolting it.
+    push += moved * state.scrollBoost;
+    const fed = push * (1 - Math.exp(-dt * 3.5));
+    push -= fed;
+    if (!reduce.matches) phase += dt * state.speed + fed;
+    // Nothing to draw while the ribbon is fully faded out (behind the hero).
+    if (state.hidden) { raf = reduce.matches ? 0 : requestAnimationFrame(draw); return; }
 
     gl.uniform2f(U.uRes, canvas.width, canvas.height);
     gl.uniform1f(U.uTime, reduce.matches ? 0 : now / 1000);

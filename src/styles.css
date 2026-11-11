@@ -268,15 +268,18 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 .live-ribbon .hero__art, .live-ribbon .about__art, .live-ribbon .services__art { position: absolute; z-index: 0; }
 .live-ribbon :is(.work, .automation, .process, .contact) > img[class*='ribbon'] { display: none; }
 .live-ribbon .service { background: rgba(255, 255, 255, .9); }
-.live-ribbon .stage { background: rgba(12, 12, 34, .82); backdrop-filter: blur(6px); }
-.live-ribbon .stage.is-active { background: rgba(40, 24, 80, .85); }
+/* No frosted glass over the live ribbon: it moves every frame, and re-blurring it every frame is what made scrolling stutter. */
+.live-ribbon .stage { background: rgba(12, 12, 34, .9); }
+.live-ribbon .stage.is-active { background: rgba(40, 24, 80, .92); }
 .live-ribbon .project { background: rgba(12, 12, 34, .9); }
 .live-ribbon .form :is(input, select, textarea) { background: rgba(23, 26, 61, .88); }
 
 /* Text that the ribbon can pass behind gets a soft panel so it always reads. */
-.live-ribbon :is(.services__side, .automation__head p, .flow__detail, .contact__lead, .contact__tag) { border-radius: calc(18 * var(--u)); padding-block: calc(14 * var(--u)); padding-right: calc(18 * var(--u)); backdrop-filter: blur(14px); }
-.live-ribbon .services__side { background: rgba(244, 239, 252, .78); border-radius: 0 calc(18 * var(--u)) calc(18 * var(--u)) 0; }
-.live-ribbon :is(.automation__head p, .flow__detail, .contact__lead, .contact__tag) { background: rgba(7, 8, 26, .72); }
+.live-ribbon :is(.services__side, .automation__head p, .flow__detail, .contact__lead, .contact__tag) { border-radius: calc(18 * var(--u)); padding-block: calc(14 * var(--u)); padding-right: calc(18 * var(--u)); }
+.live-ribbon .services__side { background: rgba(244, 239, 252, .93); border-radius: 0 calc(18 * var(--u)) calc(18 * var(--u)) 0; }
+.live-ribbon :is(.automation__head p, .flow__detail, .contact__lead, .contact__tag) { background: rgba(7, 8, 26, .88); }
+.live-ribbon .nav.is-scrolled { background: rgba(7, 8, 26, .93); backdrop-filter: none; }
+.live-ribbon .footer { background: rgba(7, 8, 26, .93); backdrop-filter: none; }
 .live-ribbon .automation__head p, .live-ribbon .contact__lead { padding-left: calc(18 * var(--u)); }
 /* ---------- HERO BUBBLES ---------- */
 .hero__bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }

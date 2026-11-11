@@ -218,18 +218,23 @@ if (ribbon) {
   document.documentElement.classList.add('live-ribbon');
   const hero = $('#top');
   const narrow = window.matchMedia('(max-width: 1000px)');
+  // Measured once (and on resize), not on every scroll tick.
+  let heroBottom = 0;
+  const measure = () => { heroBottom = hero.offsetTop + hero.offsetHeight; fade(); };
   const fade = () => {
     // The ribbon rises softly out of the hero's bottom edge instead of crossing the painted scene.
-    const top = hero.offsetTop + hero.offsetHeight - window.scrollY;
+    const top = heroBottom - window.scrollY;
+    // While the hero still fills the screen the ribbon is invisible, so it doesn't draw at all.
+    ribbon.state.hidden = top - 30 >= window.innerHeight;
     const mask = top > -150 ? `linear-gradient(to bottom, transparent ${top - 30}px, #000 ${top + 150}px)` : 'none';
     ribbonCanvas.style.maskImage = mask;
     ribbonCanvas.style.webkitMaskImage = mask;
     ribbonCanvas.style.opacity = narrow.matches ? '0.9' : '1';
   };
-  fade();
+  measure();
   window.addEventListener('scroll', fade, { passive: true });
-  window.addEventListener('resize', fade);
-  new ResizeObserver(fade).observe(hero);
+  window.addEventListener('resize', measure);
+  new ResizeObserver(measure).observe(hero);
 }
 
 /* ---------- Hero: the painted ribbon flows, the bubbles rise ---------- */
