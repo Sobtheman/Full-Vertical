@@ -142,7 +142,9 @@ export function initRibbon(canvas, { speed = 0.16, scrollBoost = 0.0016 } = {}) 
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
   const U = Object.fromEntries(['uRes', 'uTime', 'uScroll', 'uPhase'].map((n) => [n, gl.getUniformLocation(prog, n)]));
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Respect "reduce motion" unless the address ends in ?motion=on (for testing).
+  const forced = new URLSearchParams(location.search).get('motion') === 'on';
+  const reduce = forced ? { matches: false } : window.matchMedia('(prefers-reduced-motion: reduce)');
 
   let dpr = 1;
   const resize = () => {

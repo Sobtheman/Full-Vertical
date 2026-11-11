@@ -1,5 +1,6 @@
 import { config } from './config.js';
 import { initRibbon } from './ribbon.js';
+import { initHeroFlow } from './hero-flow.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -210,3 +211,8 @@ if (ribbon) {
   window.addEventListener('scroll', fade, { passive: true });
   window.addEventListener('resize', fade);
 }
+/* ---------- Hero: the painted ribbon flows ---------- */
+// Same approved image, drawn on a canvas so the ribbon's surface can move.
+// If it can't run (or the visitor prefers no motion) the still image stays.
+const heroNarrow = window.matchMedia('(max-width: 1000px)');
+window.__heroFlow = initHeroFlow($('#hero-flow'), '/art/hero.webp', { posX: () => (heroNarrow.matches ? 0.64 : 0.5) });
