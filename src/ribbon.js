@@ -60,12 +60,13 @@ vec4 sheet(float x, float wy, float c, float hw, float seed, float px) {
   lit = mix(lit, HOT, 0.85 * smoothstep(0.35, 1.0, sin(a * 2.3 + 3.2 + seed)));
   lit = mix(lit, PINK, 0.6 * smoothstep(0.7, 1.0, sin(a * 3.7 + 0.4)));
   // Dark face: deep navy with electric blue running through it.
-  vec3 shadow = mix(NAVY * 0.45, NAVY * 1.5 + ELEC * 0.2, shade);
-  shadow = mix(shadow, ELEC, 0.75 * smoothstep(0.55, 1.0, sin(a * 3.1 + 1.0)));
+  vec3 shadow = mix(NAVY * 0.9 + DEEP * 0.12, NAVY + ELEC * 0.45, shade);
+  shadow = mix(shadow, ELEC, 0.85 * smoothstep(0.3, 1.0, sin(a * 3.1 + 1.0)));
+  shadow = mix(shadow, HOT, 0.45 * smoothstep(0.6, 1.0, sin(a * 2.6 - 2.0 + seed)));
 
   vec3 col = mix(shadow, lit, smoothstep(-0.3, 0.3, face));
   // Deep pockets where the metal folds away from the light.
-  col = mix(col, NAVY * 0.3, 0.8 * smoothstep(0.45, 1.0, sin(a * 1.3 - 1.1 + seed)));
+  col = mix(col, NAVY * 0.75 + DEEP * 0.1, 0.7 * smoothstep(0.6, 1.0, sin(a * 1.3 - 1.1 + seed)));
 
   // Chrome highlights: thin, bright, sliding along the flow.
   float hl = pow(0.5 + 0.5 * sin(a * 5.2 + 2.0), 22.0);
@@ -79,7 +80,7 @@ vec4 sheet(float x, float wy, float c, float hw, float seed, float px) {
   float rim = pow(au, 6.0);
   col = mix(col, mix(LILAC, vec3(1.0), 0.55), rim * 0.9);
 
-  float alpha = smoothstep(1.0, 1.0 - px / w * 1.5, au);
+  float alpha = 1.0 - smoothstep(1.0 - px / w * 1.5, 1.0, au);
   return vec4(col * alpha, alpha);
 }
 
@@ -104,7 +105,7 @@ void main() {
   vec4 s1 = sheet(x, wy, c - hw * 0.45 * w1, hw * 1.15, 1.3, px);
   vec4 s2 = sheet(x, wy, c + hw * 0.55 * w3, hw * 0.80, 5.6, px);
   vec4 s3 = sheet(x, wy, c + hw * 0.75 * w1, hw * 0.50, 2.9, px);
-  s0.rgb *= 0.72;
+  s0.rgb *= 0.85;
   s1.rgb *= 0.9;
 
   vec4 col = over(s3, over(s2, over(s1, s0)));
@@ -185,5 +186,5 @@ export function initRibbon(canvas, { speed = 0.16, scrollBoost = 0.0016 } = {}) 
   window.addEventListener('scroll', () => { if (reduce.matches) requestAnimationFrame(draw); }, { passive: true });
   start();
 
-  return { state, stop, start };
+  return { state, stop, start, render: () => draw(performance.now()) };
 }

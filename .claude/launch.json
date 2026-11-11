@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "fv-site",
-      "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "powershell.exe",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\User\\Documents\\FULL VERTICAL\\site\\scripts\\serve.ps1"],
       "port": 5173
     }
   ]

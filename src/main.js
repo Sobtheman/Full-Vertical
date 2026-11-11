@@ -1,9 +1,3 @@
-import '@fontsource/red-hat-display/500.css';
-import '@fontsource/red-hat-display/700.css';
-import '@fontsource/red-hat-display/800.css';
-import '@fontsource/red-hat-text/400.css';
-import '@fontsource/red-hat-text/500.css';
-import './styles.css';
 import { config } from './config.js';
 
 const $ = (s, el = document) => el.querySelector(s);

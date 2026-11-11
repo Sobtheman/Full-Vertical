@@ -14,11 +14,11 @@ Homepage for Full Vertical (never "LLC"), a creative technology studio. One page
 - No invented clients, numbers, history or results.
 - Test in the browser at 1440 and 390 before saying something works.
 
-## Commands
-- `npm run dev` — local preview at http://localhost:5173
-- `npm run build` — production build to `dist/`
-- `npm test` — Playwright checks (`tests/`)
-- `npm run plates` — re-cut provisional art from the references into `public/art/`
+## Running it
+- No build step and nothing to install. Preview: `scripts/serve.ps1` (plain PowerShell) serves the folder at http://localhost:5173, with `public/` as fallback.
+- Sebastian does not want software installed on his computer. Do not install Node or anything else without asking.
+- `tests/` (Playwright) and `scripts/make-plates.mjs` need Node; run them only where Node already exists (cloud/CI). Locally, verify in the browser pane.
+- `ribbon.html` is a test page for the live ribbon (`src/ribbon.js`). It is not part of the site yet.
 
 ## Layout notes
 - Desktop sizes use `calc(N * var(--u))`, where N is pixels in the 1672px-wide reference.

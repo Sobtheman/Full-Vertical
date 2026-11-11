@@ -1,3 +1,8 @@
+@font-face { font-family: 'Red Hat Display'; font-weight: 500; font-display: swap; src: url('/fonts/red-hat-display-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Red Hat Display'; font-weight: 700; font-display: swap; src: url('/fonts/red-hat-display-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Red Hat Display'; font-weight: 800; font-display: swap; src: url('/fonts/red-hat-display-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Red Hat Text'; font-weight: 400; font-display: swap; src: url('/fonts/red-hat-text-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Red Hat Text'; font-weight: 500; font-display: swap; src: url('/fonts/red-hat-text-latin-500-normal.woff2') format('woff2'); }
 /* FULL VERTICAL homepage.
    Desktop sizes are written in design pixels from the 1672px-wide references:
    calc(N * var(--u)) = N pixels in the reference, scaled to the window. */
