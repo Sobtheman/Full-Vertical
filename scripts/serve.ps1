@@ -20,6 +20,16 @@ while ($listener.IsListening) {
   try {
     $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath).TrimStart('/')
     if ($rel -eq '') { $rel = 'index.html' }
+    # Preview recordings: the page can save a captured frame into preview/frames/.
+    if ($ctx.Request.HttpMethod -eq 'POST' -and $rel -like '__save/*') {
+      $name = ($rel.Substring(7) -replace '[^\w.-]', '')
+      $dir = Join-Path $root 'preview\frames'
+      New-Item -ItemType Directory -Force $dir | Out-Null
+      $out = [IO.File]::Create((Join-Path $dir $name))
+      $ctx.Request.InputStream.CopyTo($out); $out.Close()
+      $ctx.Response.StatusCode = 204
+      continue
+    }
     $file = $null
     foreach ($base in $root, (Join-Path $root 'public')) {
       $candidate = [IO.Path]::GetFullPath((Join-Path $base $rel))
