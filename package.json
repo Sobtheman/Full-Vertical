@@ -1,0 +1,29 @@
+{
+  "name": "full-vertical-site",
+  "version": "1.0.0",
+  "description": "",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview",
+    "plates": "node scripts/make-plates.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "sharp": "^0.35.5",
+    "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "@fontsource/red-hat-display": "^5.3.0",
+    "@fontsource/red-hat-text": "^5.3.0"
+  },
+  "private": true
+}
