@@ -1,6 +1,7 @@
 import { config } from './config.js';
 import { initRibbon } from './ribbon.js';
 import { initHeroFlow } from './hero-flow.js';
+import { initBubbles } from './bubbles.js';
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -192,6 +193,22 @@ if (!reduce) {
   });
 }
 
+/* ---------- Scroll lift ---------- */
+// Scrolling down makes everything in the hero rise faster for a moment, then it settles.
+const lift = { value: 0, lastY: window.scrollY, lastT: performance.now() };
+const liftNow = () => {
+  const now = performance.now();
+  lift.value *= Math.exp(-(now - lift.lastT) / 1000 * 1.6);
+  lift.lastT = now;
+  return lift.value;
+};
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  liftNow();
+  if (y > lift.lastY) lift.value = Math.min(7, lift.value + (y - lift.lastY) * 0.03);
+  lift.lastY = y;
+}, { passive: true });
+
 /* ---------- Live ribbon ---------- */
 // Runs behind every section below the hero and flows upward. The hero keeps its painted ribbon.
 const ribbonCanvas = $('#ribbon');
@@ -202,17 +219,25 @@ if (ribbon) {
   const hero = $('#top');
   const narrow = window.matchMedia('(max-width: 1000px)');
   const fade = () => {
-    // The ribbon rises from behind the hero's bottom edge instead of crossing the painted scene.
-    const top = Math.max(0, hero.offsetTop + hero.offsetHeight - window.scrollY);
-    ribbonCanvas.style.clipPath = `inset(${top}px 0 0 0)`;
+    // The ribbon rises softly out of the hero's bottom edge instead of crossing the painted scene.
+    const top = hero.offsetTop + hero.offsetHeight - window.scrollY;
+    const mask = top > -150 ? `linear-gradient(to bottom, transparent ${top - 30}px, #000 ${top + 150}px)` : 'none';
+    ribbonCanvas.style.maskImage = mask;
+    ribbonCanvas.style.webkitMaskImage = mask;
     ribbonCanvas.style.opacity = narrow.matches ? '0.5' : '1';
   };
   fade();
   window.addEventListener('scroll', fade, { passive: true });
   window.addEventListener('resize', fade);
+  new ResizeObserver(fade).observe(hero);
 }
-/* ---------- Hero: the painted ribbon flows ---------- */
+
+/* ---------- Hero: the painted ribbon flows, the bubbles rise ---------- */
 // Same approved image, drawn on a canvas so the ribbon's surface can move.
-// If it can't run (or the visitor prefers no motion) the still image stays.
+// If it can't run (or the visitor prefers no motion) the still image stays, bubbles and all.
 const heroNarrow = window.matchMedia('(max-width: 1000px)');
-window.__heroFlow = initHeroFlow($('#hero-flow'), '/art/hero.webp', { posX: () => (heroNarrow.matches ? 0.64 : 0.5) });
+window.__heroFlow = initHeroFlow($('#hero-flow'), '/art/hero.webp', {
+  posX: () => (heroNarrow.matches ? 0.64 : 0.5),
+  boost: liftNow,
+  onReady: (flow) => { window.__bubbles = initBubbles($('#hero-bubbles'), flow, '/art/hero.webp', { boost: liftNow }); },
+});

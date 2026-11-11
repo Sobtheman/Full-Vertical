@@ -278,6 +278,37 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
 .live-ribbon .services__side { background: rgba(244, 239, 252, .78); border-radius: 0 calc(18 * var(--u)) calc(18 * var(--u)) 0; }
 .live-ribbon :is(.automation__head p, .flow__detail, .contact__lead, .contact__tag) { background: rgba(7, 8, 26, .72); }
 .live-ribbon .automation__head p, .live-ribbon .contact__lead { padding-left: calc(18 * var(--u)); }
+/* ---------- HERO BUBBLES ---------- */
+.hero__bubbles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.bubble { position: absolute; left: 0; top: 0; border-radius: 50%; pointer-events: auto; cursor: pointer; will-change: transform, opacity; -webkit-tap-highlight-color: transparent; }
+.bubble:focus-visible { outline: none; }
+.bubble__skin { position: absolute; inset: 0; border-radius: 50%; background-repeat: no-repeat;
+  /* Solid glassy rim, see-through middle, so the sky behind shows as it climbs. */
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, .62) 0%, rgba(0, 0, 0, .8) 62%, #000 80%, #000 93%, transparent 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, .62) 0%, rgba(0, 0, 0, .8) 62%, #000 80%, #000 93%, transparent 100%);
+  transition: transform .26s cubic-bezier(.2, .9, .3, 1.4), opacity .22s ease-out; }
+.bubble::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .9); opacity: 0; transform: scale(.9); }
+.bubble.is-popping .bubble__skin { transform: scale(1.35); opacity: 0; }
+.bubble.is-popping::after { animation: bubble-ring .32s ease-out; }
+@keyframes bubble-ring { 0% { opacity: .9; transform: scale(.9); } 100% { opacity: 0; transform: scale(1.7); } }
+
+/* ---------- SECTION BLENDS ----------
+   No hard colour lines between sections: bright ones melt into the dark ones
+   through a band of dusk purple, and the hero sinks into night at its foot. */
+.hero::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 26%; z-index: 0; pointer-events: none;
+  background: linear-gradient(to bottom, rgba(7, 8, 26, 0) 0%, rgba(23, 20, 61, .55) 45%, rgba(7, 8, 26, .92) 82%, var(--midnight) 100%); }
+:is(.services, .process)::before, :is(.services, .about)::after, .process::after { content: ''; position: absolute; left: 0; right: 0; height: var(--blend); pointer-events: none; z-index: 0; }
+:is(.services, .process, .about) { --blend: calc(150 * var(--u)); }
+:is(.services, .process)::before { top: 0; background: linear-gradient(to bottom, var(--midnight) 0%, rgba(40, 28, 96, .78) 38%, rgba(118, 80, 188, .28) 72%, rgba(118, 80, 188, 0) 100%); }
+:is(.services, .about)::after { bottom: 0; background: linear-gradient(to top, var(--midnight) 0%, rgba(40, 28, 96, .78) 38%, rgba(118, 80, 188, .28) 72%, rgba(118, 80, 188, 0) 100%); }
+.process::after { bottom: 0; background: linear-gradient(to top, #B4B0F7 0%, rgba(180, 176, 247, 0) 100%); }
+/* Room for the blends, so they never sit on top of words. */
+.services__inner { padding-top: calc(76 * var(--u) + var(--blend)); padding-bottom: calc(112 * var(--u) + var(--blend)); }
+.process__inner { padding-top: calc(190 * var(--u) + var(--blend) * .6); }
+.about__copy { padding-bottom: calc(120 * var(--u) + var(--blend)); }
+.services > *, .process > *, .about > *, .hero__copy { z-index: 1; }
+/* The services artwork fades out at both ends so it doesn't leave a box on the blend. */
+.services__art { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--blend) * 1.3), #000 calc(100% - var(--blend) * 1.3), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 calc(var(--blend) * 1.3), #000 calc(100% - var(--blend) * 1.3), transparent 100%); }
 /* ---------- Scroll reveal ---------- */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .9s var(--ease), transform .9s var(--ease); }
 .reveal.is-in { opacity: 1; transform: none; }
@@ -417,4 +448,12 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
   .reveal { opacity: 1; transform: none; }
+}
+
+/* Section blends on small screens (after the mobile layout so the spacing wins). */
+@media (max-width: 1000px) {
+  :is(.services, .process, .about) { --blend: 90px; }
+  .services__inner { padding-top: calc(72px + var(--blend)); padding-bottom: calc(72px + var(--blend)); }
+  .process__inner { padding-top: calc(130px + var(--blend) * .6); }
+  .about__copy { padding-bottom: calc(60px + var(--blend)); }
 }

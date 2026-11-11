@@ -1,9 +1,19 @@
 // Makes the painted ribbon in the approved hero image flow, without replacing the image.
 // The hero picture is drawn on a canvas and, only inside the ribbon's area, its pixels
 // are carried along the ribbon (up and to the right). Sky, mountains and the kid stay still.
+// The five painted bubbles are painted out here; src/bubbles.js floats real ones on top.
 
-const IMG_W = 1672;
-const IMG_H = 941;
+export const IMG_W = 1672;
+export const IMG_H = 941;
+
+// The bubbles as painted in the approved image (centre and radius, in image pixels).
+export const PAINTED_BUBBLES = [
+  { x: 56, y: 193, r: 27 },
+  { x: 737, y: 192, r: 40 },
+  { x: 1487, y: 247, r: 21 },
+  { x: 1430, y: 403, r: 92 },
+  { x: 525, y: 720, r: 44 },
+];
 
 const VERT = `
 attribute vec2 p;
@@ -16,7 +26,9 @@ uniform sampler2D uTex;
 uniform vec2 uRes;     // canvas px
 uniform vec2 uScale;   // cover-fit: image px per canvas px
 uniform vec2 uOffset;  // cover-fit: image px at canvas origin
-uniform float uTime;
+uniform float uTime;   // seconds, for the gentle wobble
+uniform float uFlow;   // how far the metal has travelled (speeds up with scrolling)
+uniform vec3 uBubbles[5];
 
 const vec2 IMG = vec2(${IMG_W}.0, ${IMG_H}.0);
 
@@ -51,31 +63,54 @@ vec2 flowDir(vec2 p) {
   return normalize(d + vec2(-d.y, d.x) * wob);
 }
 
-void main() {
-  vec2 c = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
-  vec2 p = c * uScale + uOffset;               // position in image pixels
+// The picture at a point, with the ribbon flowing.
+vec3 scene(vec2 p) {
   float m = ribbonMask(p);
-
   vec2 d = flowDir(p);
-  float t = uTime * 0.11;
-  float p1 = fract(t), p2 = fract(t + 0.5);
-  float reach = 120.0 * m;                      // how far a pixel is carried, in image px
-  vec2 ripple = m * 3.0 * vec2(sin(p.y * 0.03 + uTime * 0.9), cos(p.x * 0.025 - uTime * 0.7));
-
+  float p1 = fract(uFlow), p2 = fract(uFlow + 0.5);
+  // A short carry keeps the two blended copies close together, so the metal stays sharp.
+  float reach = 44.0 * m;
+  vec2 ripple = m * 2.0 * vec2(sin(p.y * 0.03 + uTime * 0.9), cos(p.x * 0.025 - uTime * 0.7));
   vec3 a = texture2D(uTex, (p - d * reach * (p1 - 0.5) + ripple) / IMG).rgb;
   vec3 b = texture2D(uTex, (p - d * reach * (p2 - 0.5) + ripple) / IMG).rgb;
   vec3 col = mix(a, b, abs(1.0 - 2.0 * p1));
-
   // A soft band of light travelling up the metal.
-  float along = dot(p, d);
-  float glint = pow(0.5 + 0.5 * sin(along * 0.012 - uTime * 1.1), 10.0);
-  col += m * glint * 0.07;
+  float glint = pow(0.5 + 0.5 * sin(dot(p, d) * 0.012 - uFlow * 10.0), 10.0);
+  return col + m * glint * 0.07;
+}
 
+void main() {
+  vec2 c = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  vec2 p = c * uScale + uOffset;               // position in image pixels
+  vec3 col = scene(p);
+
+  // Paint out each painted bubble by stretching the sky around it across the gap.
+  for (int i = 0; i < 5; i++) {
+    vec3 bb = uBubbles[i];
+    float R = bb.z * 1.2;
+    vec2 q = p - bb.xy;
+    float len = length(q);
+    if (len < R) {
+      // Blend the sky from eight points around the rim, nearest points counting most.
+      vec3 sum = vec3(0.0);
+      float wsum = 0.0;
+      for (int k = 0; k < 8; k++) {
+        float ang = float(k) * 0.7853982;
+        vec2 rim = bb.xy + vec2(cos(ang), sin(ang)) * (R + 3.0);
+        vec2 dv = p - rim;
+        float w = 1.0 / (dot(dv, dv) + 4.0);
+        w *= w;
+        sum += scene(rim) * w;
+        wsum += w;
+      }
+      col = mix(col, sum / wsum, 1.0 - smoothstep(R * 0.8, R, len));
+    }
+  }
   gl_FragColor = vec4(col, 1.0);
 }
 `;
 
-export function initHeroFlow(canvas, src, { posX = () => 0.5 } = {}) {
+export function initHeroFlow(canvas, src, { posX = () => 0.5, boost = () => 0, onReady = () => {} } = {}) {
   // Respect "reduce motion" unless the address ends in ?motion=on (for testing).
   const forced = new URLSearchParams(location.search).get('motion') === 'on';
   if (!forced && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
@@ -99,9 +134,10 @@ export function initHeroFlow(canvas, src, { posX = () => 0.5 } = {}) {
   const loc = gl.getAttribLocation(prog, 'p');
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  const U = Object.fromEntries(['uRes', 'uScale', 'uOffset', 'uTime'].map((n) => [n, gl.getUniformLocation(prog, n)]));
+  const U = Object.fromEntries(['uRes', 'uScale', 'uOffset', 'uTime', 'uFlow', 'uBubbles'].map((n) => [n, gl.getUniformLocation(prog, n)]));
+  gl.uniform3fv(U.uBubbles, PAINTED_BUBBLES.flatMap((b) => [b.x, b.y, b.r]));
 
-  const api = { ready: false, render: () => {} };
+  const api = { ready: false, image: null, tick: () => {}, fit: () => ({ s: 1, ox: 0, oy: 0 }) };
   const img = new Image();
   img.onload = () => {
     const tex = gl.createTexture();
@@ -121,30 +157,49 @@ export function initHeroFlow(canvas, src, { posX = () => 0.5 } = {}) {
     new ResizeObserver(resize).observe(canvas);
     resize();
 
-    let raf = 0;
-    let visible = true;
-    const draw = (now) => {
-      // Same fit as CSS "background-size: cover".
+    // Same fit as CSS "background-size: cover", in CSS pixels: screen = (image - o) * s.
+    api.fit = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      const s = Math.max(w / IMG_W, h / IMG_H);
+      return { s, ox: (IMG_W - w / s) * posX(), oy: (IMG_H - h / s) * 0.5 };
+    };
+
+    let flow = 0;
+    let clock = 0;
+    const draw = () => {
       const s = Math.max(canvas.width / IMG_W, canvas.height / IMG_H);
-      const ox = (IMG_W - canvas.width / s) * posX();
-      const oy = (IMG_H - canvas.height / s) * 0.5;
       gl.uniform2f(U.uRes, canvas.width, canvas.height);
       gl.uniform2f(U.uScale, 1 / s, 1 / s);
-      gl.uniform2f(U.uOffset, ox, oy);
-      gl.uniform1f(U.uTime, now / 1000);
+      gl.uniform2f(U.uOffset, (IMG_W - canvas.width / s) * posX(), (IMG_H - canvas.height / s) * 0.5);
+      gl.uniform1f(U.uTime, clock);
+      gl.uniform1f(U.uFlow, flow);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
-    const loop = (now) => { draw(now); raf = visible && !document.hidden ? requestAnimationFrame(loop) : 0; };
-    const start = () => { if (!raf) raf = requestAnimationFrame(loop); };
+    // Advance by dt seconds and draw. Scrolling (boost) makes the metal rise faster.
+    api.tick = (dt) => {
+      clock += dt;
+      flow += dt * 0.22 * (1 + boost());
+      draw();
+    };
 
+    let raf = 0;
+    let visible = true;
+    let last = performance.now();
+    const loop = (now) => {
+      api.tick(Math.min((now - last) / 1000, 0.05));
+      last = now;
+      raf = visible && !document.hidden ? requestAnimationFrame(loop) : 0;
+    };
+    const start = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } };
     // Only animate while the hero is on screen.
     new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) start(); }).observe(canvas);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) start(); });
 
-    api.render = (seconds) => draw((seconds ?? performance.now() / 1000) * 1000);
+    api.image = img;
     api.ready = true;
-    draw(performance.now());
+    draw();
     canvas.classList.add('is-ready');
+    onReady(api);
     start();
   };
   img.src = src;
