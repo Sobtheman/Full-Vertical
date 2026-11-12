@@ -465,3 +465,8 @@ section { position: relative; overflow: hidden; scroll-margin-top: 0; }
   .process__inner { padding-top: calc(130px + var(--blend) * .6); }
   .about__copy { padding-bottom: calc(60px + var(--blend)); }
 }
+/* ---------- No section labels ----------
+   The "06 – ABOUT" style labels were mockup page markers and are not on the site.
+   Headings that used to sit under or beside one start where the label was. */
+.work__intro h2, .about h2 { margin-top: 0; }
+.form { margin-left: 0; }
