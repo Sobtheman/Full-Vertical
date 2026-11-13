@@ -6,7 +6,7 @@
   <title>Ribbon test — Full Vertical</title>
   <meta name="robots" content="noindex">
   <style>
-    /* TEST PAGE ONLY. Not part of the site. Shows the live ribbon over each kind of background. */
+    /* TEST PAGE ONLY. Not part of the site. Shows the filmed ribbon (src/ribbon-video.js) over each kind of background. */
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; font: 500 16px/1.4 system-ui, sans-serif; background: #07081A; }
@@ -27,7 +27,7 @@
 <body>
   <canvas id="ribbon" aria-hidden="true"></canvas>
 
-  <section class="sky"><h2>Over the hero sky</h2><p>The ribbon runs the whole page and its surface flows upward. Scroll down: it drifts across and speeds up.</p></section>
+  <section class="sky"><h2>Over the hero sky</h2><p>The ribbon runs the whole page and always flows. Scroll down: it drifts across and speeds up.</p></section>
   <section class="dark"><h2>Over a dark section</h2><p>Same ribbon, same flow. Text sits on top of it.</p></section>
   <section class="light"><h2>Over the lavender section</h2><p>Services background.</p></section>
   <section class="dark"><h2>Dark again</h2><p>Automation background.</p></section>
@@ -37,21 +37,29 @@
 
   <div class="panel">
     <b>Ribbon test controls</b>
-    <label>Flow speed <input id="speed" type="range" min="0" max="0.6" step="0.01" value="0.16"><span id="speedV"></span></label>
-    <label>Scroll push <input id="boost" type="range" min="0" max="0.006" step="0.0002" value="0.0016"><span id="boostV"></span></label>
+    <label>Flow speed <input id="speed" type="range" min="0.2" max="2.5" step="0.05" value="1"><span id="speedV"></span></label>
+    <label>Scroll push <input id="boost" type="range" min="0" max="0.012" step="0.0005" value="0.004"><span id="boostV"></span></label>
+    <label>Size <input id="size" type="range" min="0.8" max="2" step="0.05" value="1.25"><span id="sizeV"></span></label>
+    <label>Position <input id="x" type="range" min="0.3" max="1" step="0.01" value="0.77"><span id="xV"></span></label>
+    <label>Side drift <input id="sway" type="range" min="0" max="0.2" step="0.01" value="0.05"><span id="swayV"></span></label>
   </div>
 
   <script type="module">
-    import { initRibbon } from '/src/ribbon.js';
-    const r = initRibbon(document.getElementById('ribbon'));
+    import { initRibbonVideo } from '/src/ribbon-video.js';
+    const r = initRibbonVideo(document.getElementById('ribbon'));
     window.__ribbon = r;
     const bind = (id, key, fmt) => {
       const el = document.getElementById(id), out = document.getElementById(id + 'V');
-      const set = () => { r.state[key] = +el.value; out.textContent = fmt(+el.value); };
-      el.addEventListener('input', set); set();
+      const set = () => { r.state[key] = +el.value; if (key === 'x') r.state.xNarrow = +el.value; out.textContent = fmt(+el.value); r.render(); };
+      el.addEventListener('input', set); out.textContent = fmt(+el.value);
     };
-    if (r) { bind('speed', 'speed', (v) => v.toFixed(2)); bind('boost', 'scrollBoost', (v) => (v * 1000).toFixed(1)); }
-    else document.querySelector('.panel').textContent = 'WebGL is not available in this browser.';
+    if (r) {
+      bind('speed', 'speed', (v) => v.toFixed(2));
+      bind('boost', 'scrollBoost', (v) => (v * 1000).toFixed(1));
+      bind('size', 'size', (v) => v.toFixed(2));
+      bind('x', 'x', (v) => v.toFixed(2));
+      bind('sway', 'sway', (v) => v.toFixed(2));
+    } else document.querySelector('.panel').textContent = 'WebGL is not available in this browser.';
   </script>
 </body>
 </html>
