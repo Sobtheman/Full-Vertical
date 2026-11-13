@@ -17,6 +17,7 @@ void main() {
 const FRAG = `
 precision mediump float;
 uniform sampler2D uTex;
+uniform float uAlpha;
 varying vec2 uv;
 void main() {
   vec2 t = vec2(uv.x, 1.0 - uv.y);                       // top-left origin, like the video
@@ -24,6 +25,7 @@ void main() {
   float a = texture2D(uTex, vec2(t.x, 0.5 + t.y * 0.5)).r; // bottom half: the mask
   // Fade the very top and bottom of the frame so the ribbon never ends on a hard cut.
   a *= smoothstep(0.0, 0.04, t.y) * smoothstep(1.0, 0.96, t.y);
+  a *= uAlpha;
   gl_FragColor = vec4(col * a, a);
 }
 `;
@@ -59,6 +61,7 @@ export function initRibbonVideo(canvas, {
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   const uRect = gl.getUniformLocation(prog, 'uRect');
+  const uAlpha = gl.getUniformLocation(prog, 'uAlpha');
 
   const tex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -82,7 +85,8 @@ export function initRibbonVideo(canvas, {
   video.crossOrigin = 'anonymous';
   video.src = narrow.matches ? srcSmall : src;
 
-  const state = { x, xNarrow, size, sway, speed, scrollBoost, hidden: false, ready: false };
+  // alpha: how strongly the ribbon shows (1 full, 0 gone). The page can change x, size and alpha per section.
+  const state = { x, xNarrow, size, sway, speed, scrollBoost, alpha: 1, squeeze: 1, hidden: false, ready: false };
   const FRAME_ASPECT = 9 / 16;   // one half of the clip: width / height
 
   const resize = () => {
@@ -102,12 +106,13 @@ export function initRibbonVideo(canvas, {
       fresh = false;
     }
     const w = canvas.clientWidth, h = canvas.clientHeight;
-    const fh = h * state.size, fw = fh * FRAME_ASPECT;
+    const fh = h * state.size, fw = fh * FRAME_ASPECT * state.squeeze;   // squeeze < 1 narrows it for phones
     // It weaves gently from side to side as the page moves past.
     const cx = (narrow.matches ? state.xNarrow : state.x) + state.sway * Math.sin(window.scrollY / h * 1.3 + 0.6);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    if (state.hidden) return;
+    if (state.hidden || state.alpha < 0.01) return;
+    gl.uniform1f(uAlpha, Math.min(1, state.alpha));
     gl.uniform4f(uRect, cx * 2 - 1, 0, fw / w, fh / h);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   };

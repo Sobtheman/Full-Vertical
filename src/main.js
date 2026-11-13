@@ -1,5 +1,5 @@
 import { config } from './config.js';
-import { initRibbon } from './ribbon.js';
+import { initRibbonVideo } from './ribbon-video.js';
 import { initHeroFlow } from './hero-flow.js';
 import { initBubbles } from './bubbles.js';
 
@@ -210,17 +210,44 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 /* ---------- Live ribbon ---------- */
-// Runs behind every section below the hero and flows upward. The hero keeps its painted ribbon.
+// The filmed ribbon runs behind every section below the hero. The hero keeps its painted ribbon.
+// How much of it shows depends on the section: full where there is little to read,
+// pulled back to the edge where people read or click, gone over the About painting.
+const RIBBON_LOOK = {
+  top:        { alpha: 1,    x: 0.77, size: 1.3 },
+  work:       { alpha: 0.6,  x: 0.9,  size: 1.15 },
+  services:   { alpha: 0.5,  x: 0.94, size: 1.1 },
+  automation: { alpha: 0.5,  x: 0.94, size: 1.1 },
+  process:    { alpha: 0.5,  x: 0.94, size: 1.1 },
+  about:      { alpha: 0,    x: 0.94, size: 1.1 },
+  contact:    { alpha: 1,    x: 0.8,  size: 1.4 },
+};
 const ribbonCanvas = $('#ribbon');
-const ribbon = initRibbon(ribbonCanvas);
+const ribbon = initRibbonVideo(ribbonCanvas);
 if (ribbon) {
   window.__ribbon = ribbon;
   document.documentElement.classList.add('live-ribbon');
   const hero = $('#top');
   const narrow = window.matchMedia('(max-width: 1000px)');
+  const zones = Object.keys(RIBBON_LOOK).map((id) => ({ el: document.getElementById(id), look: RIBBON_LOOK[id] })).filter((z) => z.el);
   // Measured once (and on resize), not on every scroll tick.
   let heroBottom = 0;
-  const measure = () => { heroBottom = hero.offsetTop + hero.offsetHeight; fade(); };
+  const measure = () => {
+    heroBottom = hero.offsetTop + hero.offsetHeight;
+    for (const z of zones) { z.top = z.el.offsetTop; z.bottom = z.top + z.el.offsetHeight; }
+    fade();
+  };
+  // The look to aim for: each section counts by how much of the screen it fills right now.
+  const goal = { alpha: 1, x: 0.77, size: 1.3 };
+  const aim = () => {
+    const y0 = window.scrollY, y1 = y0 + window.innerHeight;
+    let sum = 0, a = 0, x = 0, size = 0;
+    for (const z of zones) {
+      const w = Math.max(0, Math.min(y1, z.bottom) - Math.max(y0, z.top));
+      sum += w; a += w * z.look.alpha; x += w * z.look.x; size += w * z.look.size;
+    }
+    if (sum > 0) { goal.alpha = a / sum; goal.x = x / sum; goal.size = size / sum; }
+  };
   const fade = () => {
     // The ribbon rises softly out of the hero's bottom edge instead of crossing the painted scene.
     const top = heroBottom - window.scrollY;
@@ -230,11 +257,29 @@ if (ribbon) {
     ribbonCanvas.style.maskImage = mask;
     ribbonCanvas.style.webkitMaskImage = mask;
     ribbonCanvas.style.opacity = narrow.matches ? '0.9' : '1';
+    aim();
+  };
+  // Ease toward the goal a little every frame, so the ribbon glides between looks.
+  let lastT = performance.now();
+  const glide = (now) => {
+    const k = 1 - Math.exp(-Math.min(0.05, (now - lastT) / 1000) * 3.5);
+    lastT = now;
+    const st = ribbon.state;
+    // A phone has no empty side to park it in: keep it a slim, fainter strip on the right edge.
+    st.squeeze = narrow.matches ? 0.5 : 1;
+    st.xNarrow = 0.98;
+    st.alpha += ((narrow.matches ? goal.alpha * 0.6 : goal.alpha) - st.alpha) * k;
+    st.x += (goal.x - st.x) * k;
+    st.size += (goal.size - st.size) * k;
+    requestAnimationFrame(glide);
   };
   measure();
+  Object.assign(ribbon.state, goal);
+  ribbon.state.sway = 0.025;   // only a slight weave; each section sets where it sits
+  requestAnimationFrame(glide);
   window.addEventListener('scroll', fade, { passive: true });
   window.addEventListener('resize', measure);
-  new ResizeObserver(measure).observe(hero);
+  new ResizeObserver(measure).observe(document.body);
 }
 
 /* ---------- Hero: the painted ribbon flows, the bubbles rise ---------- */
